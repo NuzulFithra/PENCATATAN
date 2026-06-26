@@ -1,16 +1,17 @@
-﻿{
-    "version":  "1.0.0",
-    "name":  "pencatatan-pengeluaran-web",
-    "description":  "Web app untuk mencatat pengeluaran",
-    "scripts":  {
-                    "dev":  "node api/index.js",
-                    "build":  "echo \u0027Build complete\u0027"
-                },
-    "dependencies":  {
-                         "dotenv":  "^16.0.3",
-                         "express":  "^4.18.2",
-                         "@supabase/supabase-js":  "^2.39.0",
-                         "cors":  "^2.8.5"
-                     },
-    "main":  "api/index.js"
+{
+  "name": "pencatatan-pengeluaran-web",
+  "version": "1.0.0",
+  "description": "Web app untuk mencatat pengeluaran",
+  "main": "api/index.js",
+  "scripts": {
+    "dev": "node api/index.js",
+    "start": "node api/index.js",
+    "build": "echo \"Build complete\""
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2"
+  }
 }
