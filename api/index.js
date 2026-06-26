@@ -4,67 +4,90 @@ const path = require('path');
 require('dotenv').config();
 
 const app = express();
+const expenseService = require('./services/expenseService');
+const { initializeSupabase } = require('./lib/db');
+
+// Initialize Supabase on startup
+initializeSupabase();
 
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Pencatatan Pengeluaran API running' });
 });
 
-// Dummy expenses endpoint (will connect to DB later)
-app.get('/api/expenses', (req, res) => {
-  res.json({
-    data: [
-      { id: 1, date: '2026-06-26', merchant: 'Cafe Lezat', category: 'Makanan', amount: 50000, method: 'Cash' },
-      { id: 2, date: '2026-06-26', merchant: 'Gojek', category: 'Transport', amount: 30000, method: 'E-Wallet' },
-      { id: 3, date: '2026-06-25', merchant: 'Bioskop', category: 'Hiburan', amount: 75000, method: 'Card' }
-    ],
-    total: 155000
-  });
+// Get all expenses
+app.get('/api/expenses', async (req, res) => {
+  try {
+    const expenses = await expenseService.getAllExpenses();
+    const total = expenses.reduce((sum, e) => sum + e.amount, 0);
+    res.json({ data: expenses, total });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Failed to fetch expenses' });
+  }
 });
 
-// Add expense
-app.post('/api/expenses', (req, res) => {
-  const { date, merchant, category, amount, method } = req.body;
-  
-  // Validation
-  if (!date || !merchant || !category || !amount || !method) {
-    return res.status(400).json({ error: 'Missing required fields' });
+// Add new expense
+app.post('/api/expenses', async (req, res) => {
+  try {
+    const { date, merchant, category, amount, payment_method } = req.body;
+    
+    // Validation
+    if (!date || !merchant || !category || !amount || !payment_method) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const expense = await expenseService.addExpense({
+      date,
+      merchant,
+      category,
+      amount: parseInt(amount),
+      payment_method,
+      description: req.body.description || ''
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Expense added successfully',
+      data: expense
+    });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Failed to add expense' });
   }
-  
-  res.status(201).json({
-    success: true,
-    message: 'Expense added successfully',
-    data: { id: Math.floor(Math.random() * 1000), date, merchant, category, amount, method }
-  });
 });
 
 // Delete expense
-app.delete('/api/expenses/:id', (req, res) => {
-  const { id } = req.params;
-  res.json({
-    success: true,
-    message: `Expense ${id} deleted`
-  });
+app.delete('/api/expenses/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await expenseService.deleteExpense(id);
+    res.json({ success: true, message: `Expense deleted` });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Failed to delete expense' });
+  }
 });
 
 // Get dashboard stats
-app.get('/api/dashboard', (req, res) => {
-  res.json({
-    today: 50000,
-    thisMonth: 500000,
-    thisYear: 2000000,
-    totalTransactions: 45
-  });
+app.get('/api/dashboard', async (req, res) => {
+  try {
+    const stats = await expenseService.getDashboardStats();
+    res.json(stats);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Failed to fetch dashboard stats' });
+  }
 });
 
 // Serve index.html for root path
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/index.html'));
+  res.sendFile(path.join(__dirname, 'public/index.html'));
 });
 
 // Error handling
