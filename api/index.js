@@ -4,7 +4,8 @@ const path = require('path');
 require('dotenv').config();
 
 const app = express();
-const expenseService = require('../services/expenseService'); 
+const db = require('../lib/db');
+const expenseService = require('../services/expenseService');
 const { initializeSupabase } = require('./lib/db');
 
 // Initialize Supabase on startup
